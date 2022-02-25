@@ -155,15 +155,15 @@ function sanitizeValue(value, type) {
         return String(value);
       }
       case "I": {
-        if (!Array.isArray(value)) value = [ value ];
+        if (!Array.isArray(value)) value = [value];
         return value.map(v => Math.trunc(v) || 0);
       }
       case "F": {
-        if (!Array.isArray(value)) value = [ value ];
+        if (!Array.isArray(value)) value = [value];
         return value.map(v => Number(v) || 0);
       }
       case "S": {
-        if (!Array.isArray(value)) value = [ value ];
+        if (!Array.isArray(value)) value = [value];
         return value.map(String);
       }
     }
@@ -247,15 +247,11 @@ function normalizePath(p) {
 
 exports.normalizePath = normalizePath;
 
-const dynrequire = typeof __webpack_require__ === "function"
-  ? __non_webpack_require__
-  : require;
-
 /** Resolves a single possibly relative path. Keeps absolute paths, otherwise prepends baseDir. */
 function resolvePath(p, baseDir, useNodeResolution = false) {
   if (path.isAbsolute(p)) return p;
   if (useNodeResolution && !p.startsWith(".")) {
-    return dynrequire.resolve(p, { paths: [ baseDir ] });
+    return require.resolve(p, { paths: [baseDir] });
   }
   return normalizePath(path.join(baseDir, p));
 }

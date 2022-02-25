@@ -40,13 +40,9 @@ const mkdirp = require("./util/mkdirp");
 const find = require("./util/find");
 const binaryen = global.binaryen || (global.binaryen = require("binaryen"));
 
-const dynrequire = typeof __webpack_require__ === "function"
-  ? __non_webpack_require__
-  : require;
-
 const WIN = process.platform === "win32";
 const EOL = WIN ? "\r\n" : "\n";
-const SEP = WIN ? "\\"   : "/";
+const SEP = WIN ? "\\" : "/";
 
 function toUpperSnakeCase(str) {
   return str.replace(/-/g, "_").toUpperCase();
@@ -87,10 +83,10 @@ function loadAssemblyScriptJS() {
     exports = require("assemblyscript");
   } catch (e) {
     try { // `asc` on the command line (unnecessary in recent node)
-      exports = dynrequire("../dist/assemblyscript.js");
+      exports = require("../dist/assemblyscript.js");
     } catch (e) {
       try { // `asc` on the command line without dist files (unnecessary in recent node)
-        tsNode = dynrequire("ts-node");
+        tsNode = require("ts-node");
         tsNode.register({
           project: path.join(__dirname, "..", "src", "tsconfig.json"),
           typeCheck: false,
@@ -106,12 +102,12 @@ function loadAssemblyScriptJS() {
             target: "es2017"
           }
         });
-        dynrequire("../src/glue/js");
-        exports = dynrequire("../src");
+        require("../src/glue/js");
+        exports = require("../src");
       } catch (e_ts) {
         if (!tsNode || !(e_ts instanceof tsNode.TSError)) {
           try { // `require("dist/asc.js")` in explicit browser tests
-            exports = dynrequire("./assemblyscript");
+            exports = require("./assemblyscript");
           } catch (e) {
             throw Error(`${e_ts.stack}\n---\n${e.stack}`);
           }
@@ -190,7 +186,7 @@ loadAssemblyScript();
 exports.isBundle = typeof BUNDLE_VERSION === "string";
 
 /** AssemblyScript version. */
-exports.version = exports.isBundle ? BUNDLE_VERSION : dynrequire("../package.json").version;
+exports.version = exports.isBundle ? BUNDLE_VERSION : require("../package.json").version;
 
 /** Available CLI options. */
 exports.options = require("./asc.json");
@@ -298,7 +294,7 @@ exports.main = function main(argv, options, callback) {
 
   if (opts.noColors) {
     colorsUtil.stdout.supported =
-    colorsUtil.stderr.supported = false;
+      colorsUtil.stderr.supported = false;
   } else {
     colorsUtil.stdout = colorsUtil.from(stdout);
     colorsUtil.stderr = colorsUtil.from(stderr);
@@ -380,7 +376,7 @@ exports.main = function main(argv, options, callback) {
 
   // I/O must be specified if not present in the environment
   if (!fs.readFileSync) {
-    if (readFile === readFileNode)   throw Error("'options.readFile' must be specified");
+    if (readFile === readFileNode) throw Error("'options.readFile' must be specified");
     if (writeFile === writeFileNode) throw Error("'options.writeFile' must be specified");
     if (listFiles === listFilesNode) throw Error("'options.listFiles' must be specified");
   }
@@ -473,7 +469,7 @@ exports.main = function main(argv, options, callback) {
   assemblyscript.setStackSize(compilerOptions, opts.stackSize);
 
   // Instrument callback to perform GC
-  callback = (function(callback) {
+  callback = (function (callback) {
     return function wrappedCallback(err) {
       __unpin(compilerOptions);
       if (program) __unpin(program);
@@ -556,7 +552,7 @@ exports.main = function main(argv, options, callback) {
     for (let i = 0, k = transformArgs.length; i < k; ++i) {
       let filename = transformArgs[i].trim();
       if (!tsNodeRegistered && filename.endsWith(".ts")) { // ts-node requires .ts specifically
-        dynrequire("ts-node").register({
+        require("ts-node").register({
           transpileOnly: true,
           skipProject: true,
           compilerOptions: { target: "ES2016" }
@@ -564,7 +560,7 @@ exports.main = function main(argv, options, callback) {
         tsNodeRegistered = true;
       }
       try {
-        transforms.push(dynrequire(dynrequire.resolve(filename, {
+        transforms.push(require(require.resolve(filename, {
           paths: [baseDir, process.cwd()]
         })));
       } catch (e) {
@@ -633,7 +629,7 @@ exports.main = function main(argv, options, callback) {
       let libDir = customLibDirs[i];
       let libFiles;
       if (libDir.endsWith(extension.ext)) {
-        libFiles = [ path.basename(libDir) ];
+        libFiles = [path.basename(libDir)];
         libDir = path.dirname(libDir);
       } else {
         libFiles = listFiles(libDir, baseDir) || [];
@@ -679,7 +675,7 @@ exports.main = function main(argv, options, callback) {
         }
       }
 
-    // Search library in this order: stdlib, custom lib dirs, paths
+      // Search library in this order: stdlib, custom lib dirs, paths
     } else {
       const plainName = internalPath.substring(libraryPrefix.length);
       const indexName = `${plainName}/index`;
@@ -908,13 +904,13 @@ exports.main = function main(argv, options, callback) {
     if (typeof module === "number") { // Wasm
       const original = assemblyscript.Module.wrap(module);
       module = binaryen.wrapModule(original.ref);
-      module.optimize = function(...args) {
+      module.optimize = function (...args) {
         original.optimize(...args);
       };
     } else { // JS
       const original = module;
       module = binaryen.wrapModule(module.ref);
-      module.optimize = function(...args) {
+      module.optimize = function (...args) {
         original.optimize(...args);
       };
     }
@@ -1052,10 +1048,10 @@ exports.main = function main(argv, options, callback) {
 
     let hasStdout = false;
     let hasOutput = opts.textFile != null
-                 || opts.binaryFile != null
-                 || opts.jsFile != null
-                 || opts.tsdFile != null
-                 || opts.idlFile != null;
+      || opts.binaryFile != null
+      || opts.jsFile != null
+      || opts.tsdFile != null
+      || opts.idlFile != null;
 
     // Write binary
     if (opts.binaryFile != null) {
@@ -1294,7 +1290,7 @@ function getAsconfig(file, baseDir, readFile) {
   let config;
   try {
     config = JSON.parse(contents);
-  } catch(ex) {
+  } catch (ex) {
     throw new Error(`Asconfig is not valid json: ${location}`);
   }
 
@@ -1451,7 +1447,7 @@ var allocBuffer = typeof global !== "undefined" && global.Buffer
 /** Creates a memory stream that can be used in place of stdout/stderr. */
 function createMemoryStream(fn) {
   var stream = [];
-  stream.write = function(chunk) {
+  stream.write = function (chunk) {
     if (fn) fn(chunk);
     if (typeof chunk === "string") {
       let buffer = allocBuffer(utf8.length(chunk));
@@ -1460,10 +1456,10 @@ function createMemoryStream(fn) {
     }
     this.push(chunk);
   };
-  stream.reset = function() {
+  stream.reset = function () {
     stream.length = 0;
   };
-  stream.toBuffer = function() {
+  stream.toBuffer = function () {
     var offset = 0, i = 0, k = this.length;
     while (i < k) offset += this[i++].length;
     var buffer = allocBuffer(offset);
@@ -1475,7 +1471,7 @@ function createMemoryStream(fn) {
     }
     return buffer;
   };
-  stream.toString = function() {
+  stream.toString = function () {
     var buffer = this.toBuffer();
     return utf8.read(buffer, 0, buffer.length);
   };
@@ -1509,18 +1505,18 @@ function crash(stage, e) {
     BAR, EOL,
     (typeof e.stack === "string"
       ? [
-          BAR, "Here is the stack trace hinting at the problem, perhaps it's useful?", EOL,
-          BAR, EOL,
-          e.stack.replace(/^/mg, BAR), EOL,
-          BAR, EOL,
-          BAR, "If it refers to the dist files, try to 'npm install source-map-support' and", EOL,
-          BAR, "run again, which should then show the actual code location in the sources.", EOL,
-        ]
+        BAR, "Here is the stack trace hinting at the problem, perhaps it's useful?", EOL,
+        BAR, EOL,
+        e.stack.replace(/^/mg, BAR), EOL,
+        BAR, EOL,
+        BAR, "If it refers to the dist files, try to 'npm install source-map-support' and", EOL,
+        BAR, "run again, which should then show the actual code location in the sources.", EOL,
+      ]
       : [
-          BAR, "There is no stack trace. Perhaps a Binaryen exception above / in console?", EOL,
-          BAR, EOL,
-          BAR, "> " + e.stack, EOL
-        ]
+        BAR, "There is no stack trace. Perhaps a Binaryen exception above / in console?", EOL,
+        BAR, EOL,
+        BAR, "> " + e.stack, EOL
+      ]
     ).join(""),
     BAR, EOL,
     BAR, "If you see where the error is, feel free to send us a pull request. If not,", EOL,
